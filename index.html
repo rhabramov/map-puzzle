@@ -3,30 +3,37 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Map Puzzle</title>
+  <title>Plotted</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+
 </head>
 <body>
 
   <header>
     <div class="header-inner">
-      <h1>Map Puzzle</h1>
+      <h1>Plotted</h1>
     </div>
   </header>
 
   <main>
+
+    <section class="instructions-section">
+      <div class="instructions-card">
+        <p>A new set of map points is revealed each day, Monday through Thursday. Each point shares something in common — a theme, a category, a connection. Study the locations as they accumulate throughout the week, then submit your best guess below. Winners are announced every Friday.</p>
+      </div>
+    </section>
+
     <section class="map-section">
       <div id="map-container"></div>
     </section>
 
      <section id="winners-section" class="winners-section" style="display:none">
       <div class="winners-card">
-        <h2>This week's winners</h2>
-        <p class="winners-week" id="winners-week"></p>
-        <p class="winners-week" id="winners-week">Congratulations to <span id="winner-1">—</span>, <span id="winner-2">—</span>, and <span id="winner-3">—</span> for guessing the solution correctly!</p>
+        <p id="winners-message" class="winners-message"></p>
       </div>
     </section>
 

@@ -198,14 +198,21 @@ async function init() {
 async function loadWinners(folderName) {
   const SHEET_URL = 'https://script.google.com/macros/s/AKfycbzY0KQnMLFHsMDgNyl7QSyZRXUFUqbGPnrXgrQzUqOjkMYuYRGK9SplYRx3AMnsb40Axg/exec';
   try {
-    const url = `${SHEET_URL}?week=${encodeURIComponent(folderName)}`;
+    const url  = `${SHEET_URL}?week=${encodeURIComponent(folderName)}`;
     const res  = await fetch(url, { redirect: 'follow', mode: 'cors' });
     const data = await res.json();
 
-    if (!data.first && !data.second && !data.third) return;
-    document.getElementById('winner-1').textContent = data.first  || '—';
-    document.getElementById('winner-2').textContent = data.second || '—';
-    document.getElementById('winner-3').textContent = data.third  || '—';
+    if (!data.first && !data.second && !data.third && !data.answer) return;
+
+    const names = [data.first, data.second, data.third].filter(Boolean);
+    let nameStr = '';
+    if (names.length === 1) nameStr = names[0];
+    else if (names.length === 2) nameStr = `${names[0]} and ${names[1]}`;
+    else nameStr = `${names[0]}, ${names[1]}, and ${names[2]}`;
+
+    const answer = data.answer || 'this week\'s puzzle';
+    document.getElementById('winners-message').innerHTML =
+      `Congratulations to ${nameStr} for guessing the solution — <em>${answer}</em> — correctly!`;
     document.getElementById('winners-section').style.display = 'block';
   } catch (err) {
     console.warn('Could not load winners:', err);

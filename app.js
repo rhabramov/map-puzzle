@@ -64,7 +64,6 @@ async function renderMap(todayPoints, allWeekPoints) {
     allWeekPoints.some(pt => d3.geoContains(feature, pt))
   );
 
-  console.log('Matched countries:', matchedCountries.length);
 
   const lons = allWeekPoints.map(p => p[0]);
   const lats = allWeekPoints.map(p => p[1]);
@@ -73,8 +72,6 @@ async function renderMap(todayPoints, allWeekPoints) {
   const minLat = Math.min(...lats);
   const maxLat = Math.max(...lats);
   const buf = 8;
-
-  console.log('Point bounds:', { minLon, maxLon, minLat, maxLat });
 
   const projection = d3.geoMercator();
   const padding = 60;
@@ -98,8 +95,6 @@ async function renderMap(todayPoints, allWeekPoints) {
   const scale  = Math.min(scaleX, scaleY);
 
   projection.scale(scale).center([midLon, midLat]).translate([W / 2, H / 2]);
-
-  console.log('Manual scale:', scale);
 
   const path = d3.geoPath().projection(projection);
 
@@ -136,7 +131,7 @@ async function renderMap(todayPoints, allWeekPoints) {
     .join('circle')
     .attr('cx', d => projection(d)[0])
     .attr('cy', d => projection(d)[1])
-    .attr('r', 6)
+    .attr('r', 3)
     .attr('fill', '#e03030')
     .attr('stroke', '#ffffff')
     .attr('stroke-width', 1.5);
@@ -189,6 +184,32 @@ async function init() {
   }
 
   await renderMap(todayPoints, allWeekPoints);
+
+  // Show winners on Fri/Sat/Sun
+  if (['friday','saturday','sunday'].includes(dayName)) {
+    await loadWinners(folderName);
+  } else {
+    console.log('Not a winners day:', dayName);
+  }
+}
+
+/* ── 5. Winners ────────────────────────────────────────── */
+
+async function loadWinners(folderName) {
+  const SHEET_URL = 'https://script.google.com/macros/s/AKfycbzY0KQnMLFHsMDgNyl7QSyZRXUFUqbGPnrXgrQzUqOjkMYuYRGK9SplYRx3AMnsb40Axg/exec';
+  try {
+    const url = `${SHEET_URL}?week=${encodeURIComponent(folderName)}`;
+    const res  = await fetch(url, { redirect: 'follow', mode: 'cors' });
+    const data = await res.json();
+
+    if (!data.first && !data.second && !data.third) return;
+    document.getElementById('winner-1').textContent = data.first  || '—';
+    document.getElementById('winner-2').textContent = data.second || '—';
+    document.getElementById('winner-3').textContent = data.third  || '—';
+    document.getElementById('winners-section').style.display = 'block';
+  } catch (err) {
+    console.warn('Could not load winners:', err);
+  }
 }
 
 /* ── 5. Form ───────────────────────────────────────────── */
@@ -196,7 +217,13 @@ async function init() {
 document.addEventListener('DOMContentLoaded', () => {
   init();
 
-  document.getElementById('submit-btn').addEventListener('click', async () => {
+  // Hidden iframe to absorb the form POST response (avoids page redirect)
+  const iframe = document.createElement('iframe');
+  iframe.name = 'hidden-submit';
+  iframe.style.display = 'none';
+  document.body.appendChild(iframe);
+
+  document.getElementById('submit-btn').addEventListener('click', () => {
     const email  = document.getElementById('email').value.trim();
     const guess  = document.getElementById('guess').value.trim();
     const msgEl  = document.getElementById('form-message');
@@ -220,33 +247,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const SHEET_URL = 'https://script.google.com/macros/s/AKfycbzY0KQnMLFHsMDgNyl7QSyZRXUFUqbGPnrXgrQzUqOjkMYuYRGK9SplYRx3AMnsb40Axg/exec';
 
-    submitBtn.textContent = 'Submitting…';
-    submitBtn.disabled = true;
+    // Build a temporary form that POSTs directly to Apps Script
+    // targeting the hidden iframe — no CORS, no page redirect
+    const form = document.createElement('form');
+    form.method  = 'POST';
+    form.action  = SHEET_URL;
+    form.target  = 'hidden-submit';
+    form.style.display = 'none';
 
-    try {
-      await fetch(SHEET_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: email,
-          guess: guess,
-          day:   getTodayDayName(),
-          week:  formatFolderDate(getMondayOfCurrentWeek())
-        })
-      });
+    const fields = {
+      email: email,
+      guess: guess,
+      day:   getTodayDayName(),
+      week:  formatFolderDate(getMondayOfCurrentWeek())
+    };
 
-      msgEl.textContent = 'Your guess has been recorded — good luck!';
-      msgEl.classList.add('success');
-      document.getElementById('email').value = '';
-      document.getElementById('guess').value = '';
-    } catch (err) {
-      console.error('Submission error:', err);
-      msgEl.textContent = 'Something went wrong. Please try again.';
-      msgEl.classList.add('error');
-    } finally {
-      submitBtn.textContent = 'Submit guess';
-      submitBtn.disabled = false;
-    }
+    Object.entries(fields).forEach(([name, value]) => {
+      const input = document.createElement('input');
+      input.type  = 'hidden';
+      input.name  = name;
+      input.value = value;
+      form.appendChild(input);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+
+    submitBtn.textContent = 'Submit guess';
+    submitBtn.disabled = false;
+    msgEl.textContent = 'Your guess has been recorded — good luck!';
+    msgEl.classList.add('success');
+    document.getElementById('email').value = '';
+    document.getElementById('guess').value = '';
   });
 });

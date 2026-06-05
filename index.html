@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Map Puzzle</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <h1>Map Puzzle</h1>
+    </div>
+  </header>
+
+  <main>
+    <section class="map-section">
+      <div id="map-container"></div>
+    </section>
+
+    <section class="form-section">
+      <div class="form-card">
+        <h2>Submit your guess</h2>
+        <p class="form-desc">Think you know what these points have in common? Enter your answer below.</p>
+
+        <div class="field">
+          <label for="email">Email address</label>
+          <input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="email" required />
+        </div>
+
+        <div class="field">
+          <label for="guess">Your answer</label>
+          <input type="text" id="guess" name="guess" placeholder="e.g. Major US airports" required />
+        </div>
+
+        <button id="submit-btn" type="button">Submit guess</button>
+
+        <p id="form-message" class="form-message" aria-live="polite"></p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

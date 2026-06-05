@@ -136,7 +136,7 @@ async function renderMap(todayPoints, allWeekPoints) {
     .join('circle')
     .attr('cx', d => projection(d)[0])
     .attr('cy', d => projection(d)[1])
-    .attr('r', 3)
+    .attr('r', 6)
     .attr('fill', '#e03030')
     .attr('stroke', '#ffffff')
     .attr('stroke-width', 1.5);
@@ -196,10 +196,11 @@ async function init() {
 document.addEventListener('DOMContentLoaded', () => {
   init();
 
-  document.getElementById('submit-btn').addEventListener('click', () => {
+  document.getElementById('submit-btn').addEventListener('click', async () => {
     const email  = document.getElementById('email').value.trim();
     const guess  = document.getElementById('guess').value.trim();
     const msgEl  = document.getElementById('form-message');
+    const submitBtn = document.getElementById('submit-btn');
 
     msgEl.className = 'form-message';
     msgEl.textContent = '';
@@ -217,16 +218,35 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    console.log('Submission:', {
-      email, guess,
-      date: new Date().toISOString(),
-      day: getTodayDayName(),
-      folder: formatFolderDate(getMondayOfCurrentWeek())
-    });
+    const SHEET_URL = 'https://script.google.com/macros/s/AKfycbzY0KQnMLFHsMDgNyl7QSyZRXUFUqbGPnrXgrQzUqOjkMYuYRGK9SplYRx3AMnsb40Axg/exec';
 
-    msgEl.textContent = 'Your guess has been recorded — good luck!';
-    msgEl.classList.add('success');
-    document.getElementById('email').value = '';
-    document.getElementById('guess').value = '';
+    submitBtn.textContent = 'Submitting…';
+    submitBtn.disabled = true;
+
+    try {
+      await fetch(SHEET_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email,
+          guess: guess,
+          day:   getTodayDayName(),
+          week:  formatFolderDate(getMondayOfCurrentWeek())
+        })
+      });
+
+      msgEl.textContent = 'Your guess has been recorded — good luck!';
+      msgEl.classList.add('success');
+      document.getElementById('email').value = '';
+      document.getElementById('guess').value = '';
+    } catch (err) {
+      console.error('Submission error:', err);
+      msgEl.textContent = 'Something went wrong. Please try again.';
+      msgEl.classList.add('error');
+    } finally {
+      submitBtn.textContent = 'Submit guess';
+      submitBtn.disabled = false;
+    }
   });
 });

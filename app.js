@@ -47,50 +47,73 @@ function parsePoints(text) {
 
 /* ── 3. Map rendering with D3 ──────────────────────────── */
 
-async function renderMap(points) {
+async function renderMap(todayPoints, allWeekPoints) {
   const container = document.getElementById('map-container');
   const W = container.clientWidth || 800;
   const H = container.clientHeight || 460;
 
-  // Fetch world topology
   const topology = await d3.json(
-    'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json'
+    'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json'
   );
 
   const countries = topojson.feature(topology, topology.objects.countries);
   const borders   = topojson.mesh(topology, topology.objects.countries, (a, b) => a !== b);
 
-  // Fit projection to the bounding box of the points, with padding
+  // Find every country containing at least one of the full week's points
+  const matchedCountries = countries.features.filter(feature =>
+    allWeekPoints.some(pt => d3.geoContains(feature, pt))
+  );
+
+  console.log('Matched countries:', matchedCountries.length);
+
+  const lons = allWeekPoints.map(p => p[0]);
+  const lats = allWeekPoints.map(p => p[1]);
+  const minLon = Math.min(...lons);
+  const maxLon = Math.max(...lons);
+  const minLat = Math.min(...lats);
+  const maxLat = Math.max(...lats);
+  const buf = 8;
+
+  console.log('Point bounds:', { minLon, maxLon, minLat, maxLat });
+
   const projection = d3.geoMercator();
+  const padding = 60;
 
-  // Build a GeoJSON feature collection from the points to use fitExtent
-  const pointsGeo = {
-    type: 'FeatureCollection',
-    features: points.map(([lon, lat]) => ({
-      type: 'Feature',
-      geometry: { type: 'Point', coordinates: [lon, lat] }
-    }))
-  };
+  // Manually compute scale and translate instead of relying on fitExtent
+  // Project the corner coordinates and solve for scale/translate directly
+  const lonSpan = (maxLon + buf) - (minLon - buf);
+  const latSpan = (maxLat + buf) - (minLat - buf);
+  const midLon  = (minLon + maxLon) / 2;
+  const midLat  = (minLat + maxLat) / 2;
 
-  const padding = 80;
-  projection.fitExtent([[padding, padding], [W - padding, H - padding]], pointsGeo);
+  // Mercator y = ln(tan(π/4 + lat*π/360))
+  const mercY = lat => Math.log(Math.tan(Math.PI / 4 + lat * Math.PI / 360));
+  const topY    = mercY(maxLat + buf);
+  const bottomY = mercY(minLat - buf);
+  const mercSpanY = topY - bottomY;
+  const mercSpanX = lonSpan * Math.PI / 180;
+
+  const scaleX = (W - padding * 2) / mercSpanX;
+  const scaleY = (H - padding * 2) / mercSpanY;
+  const scale  = Math.min(scaleX, scaleY);
+
+  projection.scale(scale).center([midLon, midLat]).translate([W / 2, H / 2]);
+
+  console.log('Manual scale:', scale);
 
   const path = d3.geoPath().projection(projection);
 
-  // Build SVG
   const svg = d3.select('#map-container')
     .append('svg')
     .attr('width', W)
     .attr('height', H)
     .style('display', 'block');
 
-  // Water background
   svg.append('rect')
     .attr('width', W)
     .attr('height', H)
     .attr('fill', '#ffffff');
 
-  // Land fill
   svg.append('g')
     .selectAll('path')
     .data(countries.features)
@@ -100,7 +123,6 @@ async function renderMap(points) {
     .attr('stroke', '#000000')
     .attr('stroke-width', 0.5);
 
-  // Country borders
   svg.append('path')
     .datum(borders)
     .attr('d', path)
@@ -108,14 +130,13 @@ async function renderMap(points) {
     .attr('stroke', '#000000')
     .attr('stroke-width', 0.4);
 
-  // Red dots
   svg.append('g')
     .selectAll('circle')
-    .data(points)
+    .data(todayPoints)
     .join('circle')
     .attr('cx', d => projection(d)[0])
     .attr('cy', d => projection(d)[1])
-    .attr('r', 4)
+    .attr('r', 3)
     .attr('fill', '#e03030')
     .attr('stroke', '#ffffff')
     .attr('stroke-width', 1.5);
@@ -130,31 +151,44 @@ async function init() {
 
   const allDays = ['monday','tuesday','wednesday','thursday'];
   const todayIndex = allDays.indexOf(dayName);
-  // Friday/Saturday/Sunday: load all 4 days (same as Thursday)
   const loadUpTo = todayIndex === -1 ? 3 : Math.min(todayIndex, 3);
-  const daysToLoad = allDays.slice(0, loadUpTo + 1);
 
-  let points = [];
+  let todayPoints   = []; // points to show as dots (cumulative up to today)
+  let allWeekPoints = []; // all 4 days' points — used only for country bounding box
 
-  for (const day of daysToLoad) {
+  // Load all 4 days for country detection
+  for (const day of allDays) {
     const filePath = `./${encodeURIComponent(folderName)}/${day}.txt`;
     try {
       const res = await fetch(filePath);
       if (!res.ok) continue;
       const text = await res.text();
-      points = points.concat(parsePoints(text));
+      allWeekPoints = allWeekPoints.concat(parsePoints(text));
     } catch (err) {
       console.warn(`Could not load ${day}:`, err);
     }
   }
 
-  if (points.length === 0) {
+  // Load only up to today for the visible dots
+  for (const day of allDays.slice(0, loadUpTo + 1)) {
+    const filePath = `./${encodeURIComponent(folderName)}/${day}.txt`;
+    try {
+      const res = await fetch(filePath);
+      if (!res.ok) continue;
+      const text = await res.text();
+      todayPoints = todayPoints.concat(parsePoints(text));
+    } catch (err) {
+      console.warn(`Could not load ${day}:`, err);
+    }
+  }
+
+  if (todayPoints.length === 0) {
     document.getElementById('map-container').innerHTML =
       `<p style="padding:2rem;color:#888;text-align:center">No puzzle found for this week. Check back later.</p>`;
     return;
   }
 
-  await renderMap(points);
+  await renderMap(todayPoints, allWeekPoints);
 }
 
 /* ── 5. Form ───────────────────────────────────────────── */

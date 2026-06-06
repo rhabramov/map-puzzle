@@ -6,8 +6,17 @@
 
 /* ── 1. Date Utilities ─────────────────────────────────── */
 
+/**
+ * Returns the current date/time as a Date object adjusted to Eastern time.
+ * Uses Intl to get the wall-clock time in ET, then constructs a plain Date.
+ */
+function getEasternNow() {
+  const etStr = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
+  return new Date(etStr);
+}
+
 function getMondayOfCurrentWeek() {
-  const today = new Date();
+  const today = getEasternNow();
   const day = today.getDay();
   const diff = (day === 0) ? -6 : 1 - day;
   const monday = new Date(today);
@@ -24,7 +33,7 @@ function formatFolderDate(date) {
 
 function getTodayDayName() {
   const names = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
-  return names[new Date().getDay()];
+  return names[getEasternNow().getDay()];
 }
 
 /* ── 2. Point Parsing ──────────────────────────────────── */
@@ -185,8 +194,11 @@ async function init() {
 
   await renderMap(todayPoints, allWeekPoints);
 
-  // Show winners on Fri/Sat/Sun
-  if (['friday','saturday','sunday'].includes(dayName)) {
+  // Hide form and show winners on Fri/Sat/Sun
+  const isWeekend = ['friday','saturday','sunday'].includes(dayName);
+  if (isWeekend) {
+    document.querySelector('.form-section').style.display = 'none';
+    console.log('Loading winners for:', folderName);
     await loadWinners(folderName);
   } else {
     console.log('Not a winners day:', dayName);
@@ -223,6 +235,34 @@ async function loadWinners(folderName) {
 
 document.addEventListener('DOMContentLoaded', () => {
   init();
+
+  // Share button
+  const shareBtn     = document.getElementById('share-btn');
+  const shareOverlay = document.getElementById('share-overlay');
+  const shareUrl     = document.getElementById('share-url');
+  const copyBtn      = document.getElementById('copy-btn');
+  const shareClose   = document.getElementById('share-close');
+
+  shareBtn.addEventListener('click', () => {
+    shareUrl.value = window.location.href;
+    shareOverlay.style.display = 'flex';
+    shareUrl.select();
+  });
+
+  copyBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(shareUrl.value).then(() => {
+      copyBtn.textContent = 'Copied!';
+      setTimeout(() => { copyBtn.textContent = 'Copy'; }, 2000);
+    });
+  });
+
+  shareClose.addEventListener('click', () => {
+    shareOverlay.style.display = 'none';
+  });
+
+  shareOverlay.addEventListener('click', (e) => {
+    if (e.target === shareOverlay) shareOverlay.style.display = 'none';
+  });
 
   // Hidden iframe to absorb the form POST response (avoids page redirect)
   const iframe = document.createElement('iframe');

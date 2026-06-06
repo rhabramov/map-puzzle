@@ -16,14 +16,26 @@
   <header>
     <div class="header-inner">
       <h1>Plotted</h1>
+      <button id="share-btn" class="share-btn" type="button">Share this puzzle</button>
     </div>
   </header>
 
-  <main>
+  <!-- Share popup -->
+  <div id="share-overlay" class="share-overlay" style="display:none">
+    <div class="share-popup">
+      <p class="share-title">Challenge a friend</p>
+      <div class="share-url-row">
+        <input id="share-url" class="share-url-input" type="text" readonly />
+        <button id="copy-btn" class="copy-btn" type="button">Copy</button>
+      </div>
+      <button id="share-close" class="share-close" type="button">✕</button>
+    </div>
+  </div>
 
+  <main>
     <section class="instructions-section">
       <div class="instructions-card">
-        <p>A new set of map points is revealed each day, Monday through Thursday. Each point shares something in common — a theme, a category, a connection. Study the locations as they accumulate throughout the week, then submit your best guess below. Winners are announced every Friday.</p>
+        <p>A new set of map points is revealed each day, Monday through Thursday. Each point shares something in common - a theme, a category, a connection. Study the locations as they accumulate throughout the week, then submit your best guess below! Winners are announced every Friday.</p>
       </div>
     </section>
 

@@ -198,10 +198,7 @@ async function init() {
   const isWeekend = ['friday','saturday','sunday'].includes(dayName);
   if (isWeekend) {
     document.querySelector('.form-section').style.display = 'none';
-    console.log('Loading winners for:', folderName);
     await loadWinners(folderName);
-  } else {
-    console.log('Not a winners day:', dayName);
   }
 }
 

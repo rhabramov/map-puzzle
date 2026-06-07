@@ -139,7 +139,7 @@ async function renderMap(todayPoints, allWeekPoints) {
     .join('circle')
     .attr('cx', d => projection(d)[0])
     .attr('cy', d => projection(d)[1])
-    .attr('r', 6)
+    .attr('r', 3)
     .attr('fill', '#e03030')
     .attr('stroke', '#ffffff')
     .attr('stroke-width', 1.5);
@@ -295,6 +295,13 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    const name = document.getElementById('name').value.trim();
+    if (!name) {
+      msgEl.textContent = 'Please fill in all fields before submitting.';
+      msgEl.classList.add('error');
+      return;
+    }
+
     const SHEET_URL = 'https://script.google.com/macros/s/AKfycbzY0KQnMLFHsMDgNyl7QSyZRXUFUqbGPnrXgrQzUqOjkMYuYRGK9SplYRx3AMnsb40Axg/exec';
 
     // Build a temporary form that POSTs directly to Apps Script
@@ -307,6 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const fields = {
       email: email,
+      name:  document.getElementById('name').value.trim(),
       guess: guess,
       day:   getTodayDayName(),
       week:  formatFolderDate(getMondayOfCurrentWeek())
@@ -330,5 +338,6 @@ document.addEventListener('DOMContentLoaded', () => {
     msgEl.classList.add('success');
     document.getElementById('email').value = '';
     document.getElementById('guess').value = '';
+    document.getElementById('name').value = '';
   });
 });

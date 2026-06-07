@@ -1,0 +1,38 @@
+Here's the full process:
+
+**1. Buy your domain on GoDaddy**
+
+Go ahead and purchase it if you haven't already. Once you own it, come back here — the rest takes about 10 minutes.
+
+**2. Add the domain to your GitHub Pages repo**
+
+Go to your repo on GitHub → **Settings** → **Pages** → under "Custom domain" type your domain (e.g. `www.mappuzzle.com`) and click Save. GitHub will create a `CNAME` file in your repo automatically.
+
+**3. Point GoDaddy DNS to GitHub**
+
+Log into GoDaddy → **My Products** → find your domain → click **DNS**. You'll need to add/update these records:
+
+For the **apex domain** (e.g. `mappuzzle.com`) — add 4 A records:
+```
+Type: A    Name: @    Value: 185.199.108.153
+Type: A    Name: @    Value: 185.199.109.153
+Type: A    Name: @    Value: 185.199.110.153
+Type: A    Name: @    Value: 185.199.111.153
+```
+
+For **www** — add a CNAME record:
+```
+Type: CNAME    Name: www    Value: YOURUSERNAME.github.io
+```
+
+**4. Wait for DNS to propagate**
+
+This takes anywhere from 5 minutes to 48 hours, though usually under an hour. GitHub will show a green checkmark in the Pages settings once it verifies.
+
+**5. Enable HTTPS**
+
+Once the domain is verified, check the **Enforce HTTPS** box in GitHub Pages settings. This is important — it ensures your Google Sheets form submission works correctly from the live domain.
+
+---
+
+One question: do you want `mappuzzle.com` or `www.mappuzzle.com` as the primary URL? GitHub Pages handles both, but it's worth deciding which one you want as the canonical address.

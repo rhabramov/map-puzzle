@@ -4,7 +4,7 @@
    white land + water, black borders, red dots.
    ============================================================ */
 
-/* ── 1. Date Utilities ─────────────────────────────────── */
+/* ── 1. Date Utilities (Eastern US time) ───────────────── */
 
 /**
  * Returns the current date/time as a Date object adjusted to Eastern time.
@@ -73,7 +73,6 @@ async function renderMap(todayPoints, allWeekPoints) {
     allWeekPoints.some(pt => d3.geoContains(feature, pt))
   );
 
-
   const lons = allWeekPoints.map(p => p[0]);
   const lats = allWeekPoints.map(p => p[1]);
   const minLon = Math.min(...lons);
@@ -140,7 +139,7 @@ async function renderMap(todayPoints, allWeekPoints) {
     .join('circle')
     .attr('cx', d => projection(d)[0])
     .attr('cy', d => projection(d)[1])
-    .attr('r', 3)
+    .attr('r', 6)
     .attr('fill', '#e03030')
     .attr('stroke', '#ffffff')
     .attr('stroke-width', 1.5);
@@ -219,9 +218,16 @@ async function loadWinners(folderName) {
     else if (names.length === 2) nameStr = `${names[0]} and ${names[1]}`;
     else nameStr = `${names[0]}, ${names[1]}, and ${names[2]}`;
 
-    const answer = data.answer || 'this week\'s puzzle';
+    const safe = (str) => str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const answer = safe(data.answer || 'this week\'s puzzle');
+    const safeNames = names.map(safe);
+    let safeNameStr = '';
+    if (safeNames.length === 1) safeNameStr = safeNames[0];
+    else if (safeNames.length === 2) safeNameStr = `${safeNames[0]} and ${safeNames[1]}`;
+    else safeNameStr = `${safeNames[0]}, ${safeNames[1]}, and ${safeNames[2]}`;
+
     document.getElementById('winners-message').innerHTML =
-      `Congratulations to ${nameStr} for guessing the solution — <em>${answer}</em> — correctly!`;
+      `Congratulations to ${safeNameStr} for guessing the solution — <em>${answer}</em> — correctly!`;
     document.getElementById('winners-section').style.display = 'block';
   } catch (err) {
     console.warn('Could not load winners:', err);

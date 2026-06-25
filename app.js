@@ -227,7 +227,7 @@ async function loadWinners(folderName) {
     else safeNameStr = `${safeNames[0]}, ${safeNames[1]}, and ${safeNames[2]}`;
 
     document.getElementById('winners-message').innerHTML =
-      `Congratulations to ${safeNameStr} for guessing the solution — <em>${answer}</em> — correctly!`;
+      `Congratulations to those who guessed the solution — <em>${answer}</em> — correctly!`;
     document.getElementById('winners-section').style.display = 'block';
   } catch (err) {
     console.warn('Could not load winners:', err);
